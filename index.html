@@ -6,7 +6,9 @@
   <style>
     body { font-family: Arial, sans-serif; text-align: center; padding: 20px; }
     #qr-reader { width: 100%; max-width: 500px; margin: auto; }
-    #status { margin-top: 20px; font-size: 18px; }
+    #status { margin-top: 20px; font-size: 18px; font-weight: bold; }
+    .success { color: green; }
+    .error { color: red; }
   </style>
 </head>
 <body>
@@ -15,33 +17,51 @@
   <div id="status">Waiting for scan...</div>
 
   <script>
-    const webAppUrl = "https://script.google.com/macros/s/AKfycbyoEqrZ1qUKdEv70XLuDhYtwMEP_Ff1ADnMXwGns1C6fIrbqd3KuVy09h4U-WplS5WLkg/exec"; // Replace with your Apps Script Web App URL
+    // === UPDATE THIS WITH YOUR APPS SCRIPT WEB APP URL ===
+    const webAppUrl = "https://script.google.com/macros/s/AKfycbyoEqrZ1qUKdEv70XLuDhYtwMEP_Ff1ADnMXwGns1C6fIrbqd3KuVy09h4U-WplS5WLkg/exec";
+
+    let scanning = true; // flag to prevent multiple triggers on the same QR
 
     function onScanSuccess(decodedText, decodedResult) {
-      // decodedText is the QR code URL
-      document.getElementById("status").innerText = "Scanning...";
-      
-      // Send GET request to Apps Script
+      if (!scanning) return; // ignore repeated scans
+      scanning = false;      // pause scanning
+
+      const statusEl = document.getElementById("status");
+      statusEl.innerText = "Scanning...";
+      statusEl.className = "";
+
+      // If your QR code is just a token or first/last URL, use it directly
+      // Otherwise, you can append to the Web App URL like:
+      // const url = webAppUrl + "?first=" + encodeURIComponent(first) + "&last=" + encodeURIComponent(last);
+
       fetch(decodedText)
         .then(response => response.text())
         .then(data => {
-          // Show feedback
-          document.getElementById("status").innerText = "✅ Scan successful!";
+          statusEl.innerText = "✅ Scan successful!";
+          statusEl.className = "success";
         })
         .catch(error => {
-          document.getElementById("status").innerText = "❌ Scan failed!";
-          console.error("Error:", error);
+          statusEl.innerText = "❌ Scan failed!";
+          statusEl.className = "error";
+          console.error("Scan error:", error);
+        })
+        .finally(() => {
+          // Wait 2 seconds before allowing next scan
+          setTimeout(() => {
+            scanning = true;
+            statusEl.innerText = "Waiting for scan...";
+            statusEl.className = "";
+          }, 2000);
         });
-      
-      // QR scanner continues scanning automatically
     }
 
     function onScanError(errorMessage) {
-      // optional: handle scan errors
+      // optional: can log errors if needed
+      // console.warn("QR scan error:", errorMessage);
     }
 
     let html5QrcodeScanner = new Html5QrcodeScanner(
-      "qr-reader", 
+      "qr-reader",
       { fps: 10, qrbox: 250 },
       false
     );
@@ -50,3 +70,4 @@
   </script>
 </body>
 </html>
+
