@@ -4,7 +4,7 @@
   <title>Camp QR Scanner</title>
   <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
   <style>
-    body { font-family: Arial, sans-serif; text-align: center; padding: 20px; }
+    body { font-family: Arial; text-align: center; padding: 20px; }
     #qr-reader { width: 100%; max-width: 500px; margin: auto; }
     #status { margin-top: 20px; font-size: 18px; font-weight: bold; }
     .success { color: green; }
@@ -17,50 +17,54 @@
   <div id="status">Waiting for scan...</div>
 
   <script>
-    // === UPDATE THIS WITH YOUR APPS SCRIPT WEB APP URL ===
-    const webAppUrl = "https://script.google.com/macros/s/AKfycbyFnjQa0Ga3hAKgRP3MK4LqsuSK3jbsegDhBpQpNEhdqPAv7qojtuw-epN-tyTNR30UBA/exec";
-
-    let scanning = true; // flag to prevent multiple triggers on the same QR
+    const webAppUrl = "YOUR_WEB_APP_URL"; // Replace with your Apps Script Web App URL
+    let scanning = true;
 
     function onScanSuccess(decodedText, decodedResult) {
-      if (!scanning) return; // ignore repeated scans
-      scanning = false;      // pause scanning
+      if (!scanning) return;
+      scanning = false;
 
       const statusEl = document.getElementById("status");
       statusEl.innerText = "Scanning...";
       statusEl.className = "";
 
-      // If your QR code is just a token or first/last URL, use it directly
-      // Otherwise, you can append to the Web App URL like:
-      // const url = webAppUrl + "?first=" + encodeURIComponent(first) + "&last=" + encodeURIComponent(last);
+      let camper;
+      try {
+        camper = JSON.parse(decodedText);
+      } catch (e) {
+        statusEl.innerText = "❌ Invalid QR code!";
+        statusEl.className = "error";
+        setTimeout(() => { scanning = true; statusEl.innerText = "Waiting for scan..."; statusEl.className = ""; }, 2000);
+        return;
+      }
 
-      fetch(decodedText)
-        .then(response => response.text())
+      const first = encodeURIComponent(camper.first);
+      const last = encodeURIComponent(camper.last);
+
+      fetch(`${webAppUrl}?first=${first}&last=${last}`)
+        .then(res => res.json())
         .then(data => {
-          statusEl.innerText = "✅ Scan successful!";
-          statusEl.className = "success";
+          if (data.status === "success") {
+            statusEl.innerText = "✅ " + data.message;
+            statusEl.className = "success";
+          } else {
+            statusEl.innerText = "❌ " + data.message;
+            statusEl.className = "error";
+          }
         })
-        .catch(error => {
+        .catch(err => {
           statusEl.innerText = "❌ Scan failed!";
           statusEl.className = "error";
-          console.error("Scan error:", error);
+          console.error(err);
         })
         .finally(() => {
-          // Wait 2 seconds before allowing next scan
-          setTimeout(() => {
-            scanning = true;
-            statusEl.innerText = "Waiting for scan...";
-            statusEl.className = "";
-          }, 2000);
+          setTimeout(() => { scanning = true; statusEl.innerText = "Waiting for scan..."; statusEl.className = ""; }, 2000);
         });
     }
 
-    function onScanError(errorMessage) {
-      // optional: can log errors if needed
-      // console.warn("QR scan error:", errorMessage);
-    }
+    function onScanError(errorMessage) {}
 
-    let html5QrcodeScanner = new Html5QrcodeScanner(
+    const html5QrcodeScanner = new Html5QrcodeScanner(
       "qr-reader",
       { fps: 10, qrbox: 250 },
       false
@@ -70,4 +74,3 @@
   </script>
 </body>
 </html>
-
