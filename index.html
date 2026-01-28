@@ -25,7 +25,6 @@
       scanning = false;
 
       const statusEl = document.getElementById("status");
-      statusEl.innerText = "Scanning...";
       statusEl.className = "";
 
       let camper;
@@ -38,6 +37,9 @@
         return;
       }
 
+      // Display the camper name immediately for confirmation
+      statusEl.innerText = `Scanning: ${camper.first} ${camper.last}...`;
+
       const first = encodeURIComponent(camper.first);
       const last = encodeURIComponent(camper.last);
 
@@ -45,15 +47,15 @@
         .then(res => res.json())
         .then(data => {
           if (data.status === "success") {
-            statusEl.innerText = "✅ " + data.message;
+            statusEl.innerText = `✅ Successfully ${data.message}`; // Already includes camper name
             statusEl.className = "success";
           } else {
-            statusEl.innerText = "❌ " + data.message;
+            statusEl.innerText = `❌ Could not find ${camper.first} ${camper.last}`;
             statusEl.className = "error";
           }
         })
         .catch(err => {
-          statusEl.innerText = "❌ Scan failed!";
+          statusEl.innerText = `❌ Error scanning ${camper.first} ${camper.last}`;
           statusEl.className = "error";
           console.error(err);
         })
