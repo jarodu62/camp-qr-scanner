@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Camp QR Scanner</title>
+  <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+  <style>
+    body { font-family: Arial, sans-serif; text-align: center; padding: 20px; }
+    #qr-reader { width: 100%; max-width: 500px; margin: auto; }
+    #status { margin-top: 20px; font-size: 18px; }
+  </style>
+</head>
+<body>
+  <h1>Camp QR Scanner</h1>
+  <div id="qr-reader"></div>
+  <div id="status">Waiting for scan...</div>
+
+  <script>
+    const webAppUrl = "https://script.google.com/macros/s/AKfycbyoEqrZ1qUKdEv70XLuDhYtwMEP_Ff1ADnMXwGns1C6fIrbqd3KuVy09h4U-WplS5WLkg/exec"; // Replace with your Apps Script Web App URL
+
+    function onScanSuccess(decodedText, decodedResult) {
+      // decodedText is the QR code URL
+      document.getElementById("status").innerText = "Scanning...";
+      
+      // Send GET request to Apps Script
+      fetch(decodedText)
+        .then(response => response.text())
+        .then(data => {
+          // Show feedback
+          document.getElementById("status").innerText = "✅ Scan successful!";
+        })
+        .catch(error => {
+          document.getElementById("status").innerText = "❌ Scan failed!";
+          console.error("Error:", error);
+        });
+      
+      // QR scanner continues scanning automatically
+    }
+
+    function onScanError(errorMessage) {
+      // optional: handle scan errors
+    }
+
+    let html5QrcodeScanner = new Html5QrcodeScanner(
+      "qr-reader", 
+      { fps: 10, qrbox: 250 },
+      false
+    );
+
+    html5QrcodeScanner.render(onScanSuccess, onScanError);
+  </script>
+</body>
+</html>
