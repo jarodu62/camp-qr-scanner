@@ -9,43 +9,35 @@
     #status { margin-top: 20px; font-size: 18px; font-weight: bold; }
     .success { color: green; }
     .error { color: red; }
-    .mode-button { margin: 5px; padding: 10px 20px; font-size: 16px; cursor: pointer; }
-    .selected { background-color: #4CAF50; color: white; }
+    .mode-btn { margin: 5px; padding: 10px 16px; font-size: 16px; }
+    .active { background-color: #4CAF50; color: white; }
   </style>
 </head>
 <body>
   <h1>Camp QR Scanner</h1>
 
-  <!-- Mode selection -->
   <div>
-    <button id="checkInBtn" class="mode-button selected">Check In</button>
-    <button id="checkOutBtn" class="mode-button">Check Out</button>
+    <button id="btn-checkin" class="mode-btn active" onclick="setMode('checkin')">Check In</button>
+    <button id="btn-checkout" class="mode-btn" onclick="setMode('checkout')">Check Out</button>
   </div>
 
   <div id="qr-reader"></div>
-  <div id="status">Waiting for scan...</div>
+  <div id="status">Mode: Check In — Waiting for scan...</div>
 
   <script>
-    const webAppUrl = "https://script.google.com/macros/s/AKfycbylQvbTxA5kW8VOy1kCiBIPCCfCduVF_8WQNc4izGMqHxR_xDp86n6-nPK8NHKaOyMNdg/exec"; // Replace with your Apps Script Web App URL
+    const webAppUrl = "https://script.google.com/macros/s/AKfycbylQvbTxA5kW8VOy1kCiBIPCCfCduVF_8WQNc4izGMqHxR_xDp86n6-nPK8NHKaOyMNdg/exec";
     let scanning = true;
-    let mode = "Check In"; // default mode
+    let mode = "checkin";
 
-    // Mode toggle buttons
-    const checkInBtn = document.getElementById("checkInBtn");
-    const checkOutBtn = document.getElementById("checkOutBtn");
+    function setMode(newMode) {
+      mode = newMode;
+      document.getElementById("btn-checkin").classList.toggle("active", mode === "checkin");
+      document.getElementById("btn-checkout").classList.toggle("active", mode === "checkout");
+      document.getElementById("status").innerText =
+        `Mode: ${mode === "checkin" ? "Check In" : "Check Out"} — Waiting for scan...`;
+    }
 
-    checkInBtn.onclick = () => {
-      mode = "Check In";
-      checkInBtn.classList.add("selected");
-      checkOutBtn.classList.remove("selected");
-    };
-    checkOutBtn.onclick = () => {
-      mode = "Check Out";
-      checkOutBtn.classList.add("selected");
-      checkInBtn.classList.remove("selected");
-    };
-
-    function onScanSuccess(decodedText, decodedResult) {
+    function onScanSuccess(decodedText) {
       if (!scanning) return;
       scanning = false;
 
@@ -58,12 +50,11 @@
       } catch (e) {
         statusEl.innerText = "❌ Invalid QR code!";
         statusEl.className = "error";
-        setTimeout(() => { scanning = true; statusEl.innerText = "Waiting for scan..."; statusEl.className = ""; }, 2000);
+        reset();
         return;
       }
 
-      // Display the camper name immediately for confirmation
-      statusEl.innerText = `Scanning: ${camper.first} ${camper.last} (${camper.sheet})...`;
+      statusEl.innerText = `Scanning ${camper.first} ${camper.last}...`;
 
       const first = encodeURIComponent(camper.first);
       const last = encodeURIComponent(camper.last);
@@ -85,12 +76,17 @@
           statusEl.className = "error";
           console.error(err);
         })
-        .finally(() => {
-          setTimeout(() => { scanning = true; statusEl.innerText = "Waiting for scan..."; statusEl.className = ""; }, 2000);
-        });
+        .finally(reset);
     }
 
-    function onScanError(errorMessage) {}
+    function reset() {
+      setTimeout(() => {
+        scanning = true;
+        document.getElementById("status").innerText =
+          `Mode: ${mode === "checkin" ? "Check In" : "Check Out"} — Waiting for scan...`;
+        document.getElementById("status").className = "";
+      }, 2000);
+    }
 
     const html5QrcodeScanner = new Html5QrcodeScanner(
       "qr-reader",
@@ -98,7 +94,7 @@
       false
     );
 
-    html5QrcodeScanner.render(onScanSuccess, onScanError);
+    html5QrcodeScanner.render(onScanSuccess, () => {});
   </script>
 </body>
 </html>
