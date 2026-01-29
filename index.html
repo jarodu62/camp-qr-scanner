@@ -9,16 +9,41 @@
     #status { margin-top: 20px; font-size: 18px; font-weight: bold; }
     .success { color: green; }
     .error { color: red; }
+    .mode-button { margin: 5px; padding: 10px 20px; font-size: 16px; cursor: pointer; }
+    .selected { background-color: #4CAF50; color: white; }
   </style>
 </head>
 <body>
   <h1>Camp QR Scanner</h1>
+
+  <!-- Mode selection -->
+  <div>
+    <button id="checkInBtn" class="mode-button selected">Check In</button>
+    <button id="checkOutBtn" class="mode-button">Check Out</button>
+  </div>
+
   <div id="qr-reader"></div>
   <div id="status">Waiting for scan...</div>
 
   <script>
-    const webAppUrl = "https://script.google.com/macros/s/AKfycbzn3o5sRQeyEnMZ77l2cee0izgdUG2a0JLvrtSM4gZl3WBZ-u3LzTFRxda6z0lQYAWZjA/exec"; // Replace with your Apps Script Web App URL
+    const webAppUrl = "YOUR_WEB_APP_URL_HERE"; // Replace with your Apps Script Web App URL
     let scanning = true;
+    let mode = "Check In"; // default mode
+
+    // Mode toggle buttons
+    const checkInBtn = document.getElementById("checkInBtn");
+    const checkOutBtn = document.getElementById("checkOutBtn");
+
+    checkInBtn.onclick = () => {
+      mode = "Check In";
+      checkInBtn.classList.add("selected");
+      checkOutBtn.classList.remove("selected");
+    };
+    checkOutBtn.onclick = () => {
+      mode = "Check Out";
+      checkOutBtn.classList.add("selected");
+      checkInBtn.classList.remove("selected");
+    };
 
     function onScanSuccess(decodedText, decodedResult) {
       if (!scanning) return;
@@ -38,19 +63,20 @@
       }
 
       // Display the camper name immediately for confirmation
-      statusEl.innerText = `Scanning: ${camper.first} ${camper.last}...`;
+      statusEl.innerText = `Scanning: ${camper.first} ${camper.last} (${camper.sheet})...`;
 
       const first = encodeURIComponent(camper.first);
       const last = encodeURIComponent(camper.last);
+      const sheet = encodeURIComponent(camper.sheet);
 
-      fetch(`${webAppUrl}?first=${first}&last=${last}`)
+      fetch(`${webAppUrl}?first=${first}&last=${last}&sheet=${sheet}&mode=${mode}`)
         .then(res => res.json())
         .then(data => {
           if (data.status === "success") {
-            statusEl.innerText = `✅ Successfully ${data.message}`; // Already includes camper name
+            statusEl.innerText = `✅ ${data.message}`;
             statusEl.className = "success";
           } else {
-            statusEl.innerText = `❌ Could not find ${camper.first} ${camper.last}`;
+            statusEl.innerText = `❌ ${data.message}`;
             statusEl.className = "error";
           }
         })
