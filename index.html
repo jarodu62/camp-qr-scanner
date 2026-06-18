@@ -5,36 +5,17 @@
   <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
 
   <style>
-    body {
-      font-family: Arial;
-      text-align: center;
-      padding: 20px;
-
-      /* 🔥 FIX: lock layout order */
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 10px;
-    }
-
-    h1 {
-      margin-bottom: 10px;
-    }
-
-    .mode-btn {
-      margin: 5px;
-      padding: 10px 16px;
-      font-size: 16px;
-    }
-
-    .active {
-      background-color: #4CAF50;
-      color: white;
-    }
+    body { font-family: Arial; text-align: center; padding: 20px; }
+    #qr-reader { width: 100%; max-width: 500px; margin: auto; }
+    #status { margin-top: 20px; font-size: 18px; font-weight: bold; }
+    .success { color: green; }
+    .error { color: red; }
+    .mode-btn { margin: 5px; padding: 10px 16px; font-size: 16px; }
+    .active { background-color: #4CAF50; color: white; }
 
     #checkout-panel {
       display: none;
-      margin-top: 10px;
+      margin-top: 20px;
     }
 
     #color-grid {
@@ -55,20 +36,6 @@
     .selected {
       border: 4px solid black;
     }
-
-    /* 🔥 FIX: force scanner order */
-    #checkout-panel { order: 1; }
-    #qr-reader { order: 2; width: 100%; max-width: 500px; height: 400px; }
-    #status { order: 3; font-size: 18px; font-weight: bold; margin-top: 10px; }
-
-    #qr-reader {
-      overflow: hidden;
-      margin: auto;
-    }
-
-    .success { color: green; }
-    .error { color: red; }
-
   </style>
 </head>
 
@@ -87,13 +54,12 @@
 </div>
 
 <div id="qr-reader"></div>
-
 <div id="status">Mode: Check In — Waiting for scan...</div>
 
 <script>
 
 const webAppUrl =
-"https://script.google.com/macros/s/AKfycbyb1lqhegT4A-_YVXEyMe85hwhdsNe45yOxoCahzvSn6979UU_SOYSPWLyam2JuYa7deQ/exec";
+"https://script.google.com/macros/s/AKfycbxagFIrXuPQUqE9YIxNQqXp3EGs_T53FeMOqj1qq6sR_i0sw-J1cTs8HEHpoy5uI9Hh4Q/exec";
 
 let scanning = true;
 let mode = "checkin";
@@ -112,7 +78,6 @@ const colors = [
   "#90ee90"
 ];
 
-// ---------- COLOR GRID ----------
 function buildColors() {
   const grid = document.getElementById("color-grid");
 
@@ -137,7 +102,6 @@ function buildColors() {
 
 buildColors();
 
-// ---------- MODE SWITCH ----------
 function setMode(newMode) {
   mode = newMode;
 
@@ -154,7 +118,6 @@ function setMode(newMode) {
     `Mode: ${mode === "checkin" ? "Check In" : "Check Out"} — Waiting for scan...`;
 }
 
-// ---------- SCAN ----------
 function onScanSuccess(decodedText) {
   if (!scanning) return;
 
@@ -210,7 +173,6 @@ function onScanSuccess(decodedText) {
     .finally(reset);
 }
 
-// ---------- RESET ----------
 function reset() {
   setTimeout(() => {
     scanning = true;
@@ -220,12 +182,8 @@ function reset() {
   }, 2000);
 }
 
-// ---------- INIT SCANNER ----------
 const html5QrcodeScanner =
-  new Html5QrcodeScanner("qr-reader", {
-    fps: 10,
-    qrbox: 250
-  }, false);
+  new Html5QrcodeScanner("qr-reader", { fps: 10, qrbox: 250 }, false);
 
 html5QrcodeScanner.render(onScanSuccess, () => {});
 
