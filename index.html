@@ -3,6 +3,7 @@
 <head>
   <title>Camp QR Scanner</title>
   <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+
   <style>
     body { font-family: Arial; text-align: center; padding: 20px; }
     #qr-reader { width: 100%; max-width: 500px; margin: auto; }
@@ -11,222 +12,182 @@
     .error { color: red; }
     .mode-btn { margin: 5px; padding: 10px 16px; font-size: 16px; }
     .active { background-color: #4CAF50; color: white; }
+
+    #checkout-panel {
+      display: none;
+      margin-top: 20px;
+    }
+
+    #color-grid {
+      display: grid;
+      grid-template-columns: repeat(5, 50px);
+      gap: 10px;
+      justify-content: center;
+      margin-top: 10px;
+    }
+
+    .color-btn {
+      width: 50px;
+      height: 50px;
+      border: 3px solid transparent;
+      cursor: pointer;
+    }
+
+    .selected {
+      border: 4px solid black;
+    }
   </style>
 </head>
+
 <body>
-  <h1>Camp QR Scanner</h1>
 
-  <div>
-    <button id="btn-checkin" class="mode-btn active" onclick="setMode('checkin')">Check In</button>
-    <button id="btn-checkout" class="mode-btn" onclick="setMode('checkout')">Check Out</button>
-  </div>
+<h1>Camp QR Scanner</h1>
 
-  <div id="qr-reader"></div>
-  <div id="status">Mode: Check In — Waiting for scan...</div>
+<div>
+  <button id="btn-checkin" class="mode-btn active" onclick="setMode('checkin')">Check In</button>
+  <button id="btn-checkout" class="mode-btn" onclick="setMode('checkout')">Check Out</button>
+</div>
 
+<div id="checkout-panel">
+  <div>Select Checkout Color</div>
+  <div id="color-grid"></div>
+</div>
 
-  <script>
-    const webAppUrl = "https://script.google.com/macros/s/AKfycbxagFIrXuPQUqE9YIxNQqXp3EGs_T53FeMOqj1qq6sR_i0sw-J1cTs8HEHpoy5uI9Hh4Q/exec";
-    let scanning = true;
-    let mode = "checkin";
-
-    function setMode(newMode) {
-      mode = newMode;
-      document.getElementById("btn-checkin").classList.toggle("active", mode === "checkin");
-      document.getElementById("btn-checkout").classList.toggle("active", mode === "checkout");
-      document.getElementById("status").innerText =
-        `Mode: ${mode === "checkin" ? "Check In" : "Check Out"} — Waiting for scan...`;
-    }
-
-    function onScanSuccess(decodedText) {
-      if (!scanning) return;
-      scanning = false;
-
-      const statusEl = document.getElementById("status");
-      statusEl.className = "";
-
-      let camper;
-      try {
-        camper = JSON.parse(decodedText);
-      } catch (e) {
-        statusEl.innerText = "❌ Invalid QR code!";
-        statusEl.className = "error";
-        reset();
-        return;
-      }
-
-      statusEl.innerText = `Scanning ${camper.first} ${camper.last}...`;
-
-      const first = encodeURIComponent(camper.first);
-      const last = encodeURIComponent(camper.last);
-      const sheet = encodeURIComponent(camper.sheet);
-
-      fetch(`${webAppUrl}?first=${first}&last=${last}&sheet=${sheet}&mode=${mode}`)
-        .then(res => res.json())
-        .then(data => {
-          if (data.status === "success") {
-            statusEl.innerText = `✅ ${data.message}`;
-            statusEl.className = "success";
-          } else {
-            statusEl.innerText = `❌ ${data.message}`;
-            statusEl.className = "error";
-          }
-        })
-        .catch(err => {
-          statusEl.innerText = `❌ Error scanning ${camper.first} ${camper.last}`;
-          statusEl.className = "error";
-          console.error(err);
-        })
-        .finally(reset);
-    }
-
-    function reset() {
-      setTimeout(() => {
-        scanning = true;
-        document.getElementById("status").innerText =
-          `Mode: ${mode === "checkin" ? "Check In" : "Check Out"} — Waiting for scan...`;
-        document.getElementById("status").className = "";
-      }, 2000);
-    }
-
-    const html5QrcodeScanner = new Html5QrcodeScanner(
-      "qr-reader",
-      { fps: 10, qrbox: 250 },
-      false
-    );
-
-    html5QrcodeScanner.render(onScanSuccess, () => {});
-  </script>
-</body>
-</html>
-
-
-
+<div id="qr-reader"></div>
+<div id="status">Mode: Check In — Waiting for scan...</div>
 
 <script>
 
-const checkoutColors = [
-  "#0066ff", // blue
-  "#ff0000", // red
-  "#d2b48c", // tan
-  "#8b4513", // brown
-  "#808080", // gray
-  "#ff8800", // orange
-  "#8000ff", // purple
-  "#00aa00", // green
-  "#87ceeb", // light blue
-  "#90ee90"  // light green
-];
+const webAppUrl =
+"https://script.google.com/macros/s/AKfycbxagFIrXuPQUqE9YIxNQqXp3EGs_T53FeMOqj1qq6sR_i0sw-J1cTs8HEHpoy5uI9Hh4Q/exec";
 
+let scanning = true;
+let mode = "checkin";
 let selectedCheckoutColor = "";
 
-function createCheckoutButtons() {
+const colors = [
+  "#0066ff",
+  "#ff0000",
+  "#d2b48c",
+  "#8b4513",
+  "#808080",
+  "#ff8800",
+  "#8000ff",
+  "#00aa00",
+  "#87ceeb",
+  "#90ee90"
+];
 
-  if (document.getElementById("checkout-colors")) return;
+function buildColors() {
+  const grid = document.getElementById("color-grid");
 
-  const container = document.createElement("div");
-
-  container.id = "checkout-colors";
-
-  container.style.display = "none";
-  container.style.marginTop = "20px";
-
-  container.innerHTML = `
-    <div style="margin-bottom:10px;">
-      Select Checkout Color
-    </div>
-
-    <div id="color-grid"
-      style="
-        display:grid;
-        grid-template-columns:repeat(5,50px);
-        gap:10px;
-        justify-content:center;">
-    </div>
-  `;
-
-  document.body.appendChild(container);
-
-  const grid =
-    document.getElementById("color-grid");
-
-  checkoutColors.forEach(color => {
-
-    const btn =
-      document.createElement("button");
-
-    btn.style.width = "50px";
-    btn.style.height = "50px";
+  colors.forEach(color => {
+    const btn = document.createElement("button");
+    btn.className = "color-btn";
     btn.style.background = color;
 
     btn.onclick = () => {
+      selectedCheckoutColor = color;
 
-      selectedCheckoutColor =
-        color;
+      document.querySelectorAll(".color-btn").forEach(b => {
+        b.classList.remove("selected");
+      });
 
-      document
-        .querySelectorAll(".color-btn")
-        .forEach(b =>
-          b.style.border =
-            "2px solid transparent"
-        );
-
-      btn.style.border =
-        "4px solid black";
-
+      btn.classList.add("selected");
     };
 
-    btn.className =
-      "color-btn";
-
     grid.appendChild(btn);
-
   });
-
 }
 
-createCheckoutButtons();
+buildColors();
 
-const oldSetMode = setMode;
+function setMode(newMode) {
+  mode = newMode;
 
-setMode = function(newMode){
+  document.getElementById("btn-checkin")
+    .classList.toggle("active", mode === "checkin");
 
-  oldSetMode(newMode);
+  document.getElementById("btn-checkout")
+    .classList.toggle("active", mode === "checkout");
 
-  const colors =
-    document.getElementById(
-      "checkout-colors"
-    );
+  document.getElementById("checkout-panel").style.display =
+    mode === "checkout" ? "block" : "none";
 
-  colors.style.display =
-    newMode === "checkout"
-      ? "block"
-      : "none";
+  document.getElementById("status").innerText =
+    `Mode: ${mode === "checkin" ? "Check In" : "Check Out"} — Waiting for scan...`;
+}
 
-};
+function onScanSuccess(decodedText) {
+  if (!scanning) return;
 
-const oldOnScan =
-  onScanSuccess;
-
-onScanSuccess =
-function(decodedText){
-
-  if (
-    mode === "checkout" &&
-    !selectedCheckoutColor
-  ){
-
-    document.getElementById(
-      "status"
-    ).innerText =
-      "❌ Select a color first";
-
+  if (mode === "checkout" && !selectedCheckoutColor) {
+    document.getElementById("status").innerText =
+      "❌ Select a checkout color first";
+    document.getElementById("status").className = "error";
     return;
-
   }
 
-  oldOnScan(decodedText);
+  scanning = false;
 
-};
+  const statusEl = document.getElementById("status");
+  statusEl.className = "";
+
+  let camper;
+
+  try {
+    camper = JSON.parse(decodedText);
+  } catch {
+    statusEl.innerText = "❌ Invalid QR code!";
+    statusEl.className = "error";
+    reset();
+    return;
+  }
+
+  statusEl.innerText = `Scanning ${camper.first} ${camper.last}...`;
+
+  const url =
+    `${webAppUrl}` +
+    `?first=${encodeURIComponent(camper.first)}` +
+    `&last=${encodeURIComponent(camper.last)}` +
+    `&sheet=${encodeURIComponent(camper.sheet)}` +
+    `&mode=${mode}` +
+    `&color=${encodeURIComponent(selectedCheckoutColor)}`;
+
+  fetch(url)
+    .then(res => res.json())
+    .then(data => {
+      statusEl.innerText =
+        data.status === "success"
+          ? `✅ ${data.message}`
+          : `❌ ${data.message}`;
+
+      statusEl.className =
+        data.status === "success" ? "success" : "error";
+    })
+    .catch(err => {
+      console.error(err);
+      statusEl.innerText = "❌ Network error";
+      statusEl.className = "error";
+    })
+    .finally(reset);
+}
+
+function reset() {
+  setTimeout(() => {
+    scanning = true;
+    document.getElementById("status").innerText =
+      `Mode: ${mode === "checkin" ? "Check In" : "Check Out"} — Waiting for scan...`;
+    document.getElementById("status").className = "";
+  }, 2000);
+}
+
+const html5QrcodeScanner =
+  new Html5QrcodeScanner("qr-reader", { fps: 10, qrbox: 250 }, false);
+
+html5QrcodeScanner.render(onScanSuccess, () => {});
 
 </script>
+
+</body>
+</html>
