@@ -187,8 +187,15 @@ function reset() {
   }, 2000);
 }
 
+document.getElementById("qr-reader").style.height = "400px";
+document.getElementById("qr-reader").style.overflow = "hidden";
+
 const html5QrcodeScanner =
-  new Html5QrcodeScanner("qr-reader", { fps: 10, qrbox: 250 }, false);
+  new Html5QrcodeScanner("qr-reader", {
+    fps: 10,
+    qrbox: 250,
+    aspectRatio: 1.0
+  }, false);
 
 html5QrcodeScanner.render(onScanSuccess, () => {});
 
