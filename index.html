@@ -1,32 +1,25 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Camp QR Scanner 2</title>
-  <script src="https://unpkg.com/html5-qrcode"></script>
+  <title>Camp QR Scanner</title>
+  <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
 
   <style>
     body {
       font-family: Arial;
       text-align: center;
       padding: 20px;
+
+      /* 🔥 FIX: lock layout order */
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
     }
 
-    #qr-reader {
-      width: 100%;
-      max-width: 500px;
-      margin: auto;
-      height: 400px;
-      overflow: hidden;
+    h1 {
+      margin-bottom: 10px;
     }
-
-    #status {
-      margin-top: 20px;
-      font-size: 18px;
-      font-weight: bold;
-    }
-
-    .success { color: green; }
-    .error { color: red; }
 
     .mode-btn {
       margin: 5px;
@@ -41,7 +34,7 @@
 
     #checkout-panel {
       display: none;
-      margin-top: 20px;
+      margin-top: 10px;
     }
 
     #color-grid {
@@ -62,12 +55,26 @@
     .selected {
       border: 4px solid black;
     }
+
+    /* 🔥 FIX: force scanner order */
+    #checkout-panel { order: 1; }
+    #qr-reader { order: 2; width: 100%; max-width: 500px; height: 400px; }
+    #status { order: 3; font-size: 18px; font-weight: bold; margin-top: 10px; }
+
+    #qr-reader {
+      overflow: hidden;
+      margin: auto;
+    }
+
+    .success { color: green; }
+    .error { color: red; }
+
   </style>
 </head>
 
 <body>
 
-<h1>Camp QR Scanner 2 </h1>
+<h1>Camp QR Scanner</h1>
 
 <div>
   <button id="btn-checkin" class="mode-btn active" onclick="setMode('checkin')">Check In</button>
@@ -80,6 +87,7 @@
 </div>
 
 <div id="qr-reader"></div>
+
 <div id="status">Mode: Check In — Waiting for scan...</div>
 
 <script>
@@ -104,7 +112,7 @@ const colors = [
   "#90ee90"
 ];
 
-// ---------- COLOR UI ----------
+// ---------- COLOR GRID ----------
 function buildColors() {
   const grid = document.getElementById("color-grid");
 
@@ -212,13 +220,12 @@ function reset() {
   }, 2000);
 }
 
-// ---------- SCANNER INIT ----------
+// ---------- INIT SCANNER ----------
 const html5QrcodeScanner =
-  new Html5QrcodeScanner(
-    "qr-reader",
-    { fps: 10, qrbox: 250 },
-    false
-  );
+  new Html5QrcodeScanner("qr-reader", {
+    fps: 10,
+    qrbox: 250
+  }, false);
 
 html5QrcodeScanner.render(onScanSuccess, () => {});
 
