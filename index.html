@@ -2,21 +2,42 @@
 <html>
 <head>
   <title>Camp QR Scanner</title>
-  <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+  <script src="https://unpkg.com/html5-qrcode"></script>
 
   <style>
-    body { font-family: Arial; text-align: center; padding: 20px; }
-#qr-reader {
-  width: 100%;
-  max-width: 500px;
-  margin: auto;
-  height: 400px;
-}
-    #status { margin-top: 20px; font-size: 18px; font-weight: bold; }
+    body {
+      font-family: Arial;
+      text-align: center;
+      padding: 20px;
+    }
+
+    #qr-reader {
+      width: 100%;
+      max-width: 500px;
+      margin: auto;
+      height: 400px;
+      overflow: hidden;
+    }
+
+    #status {
+      margin-top: 20px;
+      font-size: 18px;
+      font-weight: bold;
+    }
+
     .success { color: green; }
     .error { color: red; }
-    .mode-btn { margin: 5px; padding: 10px 16px; font-size: 16px; }
-    .active { background-color: #4CAF50; color: white; }
+
+    .mode-btn {
+      margin: 5px;
+      padding: 10px 16px;
+      font-size: 16px;
+    }
+
+    .active {
+      background-color: #4CAF50;
+      color: white;
+    }
 
     #checkout-panel {
       display: none;
@@ -83,6 +104,7 @@ const colors = [
   "#90ee90"
 ];
 
+// ---------- COLOR UI ----------
 function buildColors() {
   const grid = document.getElementById("color-grid");
 
@@ -107,6 +129,7 @@ function buildColors() {
 
 buildColors();
 
+// ---------- MODE SWITCH ----------
 function setMode(newMode) {
   mode = newMode;
 
@@ -123,6 +146,7 @@ function setMode(newMode) {
     `Mode: ${mode === "checkin" ? "Check In" : "Check Out"} — Waiting for scan...`;
 }
 
+// ---------- SCAN ----------
 function onScanSuccess(decodedText) {
   if (!scanning) return;
 
@@ -178,6 +202,7 @@ function onScanSuccess(decodedText) {
     .finally(reset);
 }
 
+// ---------- RESET ----------
 function reset() {
   setTimeout(() => {
     scanning = true;
@@ -187,15 +212,13 @@ function reset() {
   }, 2000);
 }
 
-document.getElementById("qr-reader").style.height = "400px";
-document.getElementById("qr-reader").style.overflow = "hidden";
-
+// ---------- SCANNER INIT ----------
 const html5QrcodeScanner =
-  new Html5QrcodeScanner("qr-reader", {
-    fps: 10,
-    qrbox: 250,
-    aspectRatio: 1.0
-  }, false);
+  new Html5QrcodeScanner(
+    "qr-reader",
+    { fps: 10, qrbox: 250 },
+    false
+  );
 
 html5QrcodeScanner.render(onScanSuccess, () => {});
 
