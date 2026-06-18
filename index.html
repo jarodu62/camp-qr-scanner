@@ -24,6 +24,18 @@
   <div id="qr-reader"></div>
   <div id="status">Mode: Check In — Waiting for scan...</div>
 
+  <div id="checkout-colors" style="display:none; margin-top:20px;">
+  <div>Select Checkout Group</div>
+
+  <div id="color-grid" style="
+    display:grid;
+    grid-template-columns:repeat(5,50px);
+    gap:10px;
+    justify-content:center;
+    margin-top:10px;">
+  </div>
+</div>
+
   <script>
     const webAppUrl = "https://script.google.com/macros/s/AKfycbxxajiHSYZyfWYQ4YIHhYh-TL50goL1_TrtPRc3QcEH8kVxz0L5EV_RXEtq4yx5k7Sw4w/exec";
     let scanning = true;
@@ -98,3 +110,136 @@
   </script>
 </body>
 </html>
+
+
+<script>
+
+const checkoutColors = [
+  {name:"blue", hex:"#0066ff"},
+  {name:"red", hex:"#ff0000"},
+  {name:"tan", hex:"#d2b48c"},
+  {name:"brown", hex:"#8b4513"},
+  {name:"gray", hex:"#808080"},
+  {name:"orange", hex:"#ff8800"},
+  {name:"purple", hex:"#8000ff"},
+  {name:"green", hex:"#00aa00"},
+  {name:"lightblue", hex:"#87ceeb"},
+  {name:"lightgreen", hex:"#90ee90"}
+];
+
+let selectedCheckoutColor = null;
+
+function initializeCheckoutColors() {
+
+  const grid = document.getElementById("color-grid");
+
+  checkoutColors.forEach(color => {
+
+    const btn = document.createElement("button");
+
+    btn.style.width = "50px";
+    btn.style.height = "50px";
+    btn.style.background = color.hex;
+    btn.style.border = "3px solid transparent";
+    btn.style.cursor = "pointer";
+
+    btn.onclick = () => {
+
+      document
+        .querySelectorAll(".color-selected")
+        .forEach(el=>{
+          el.classList.remove("color-selected");
+          el.style.border="3px solid transparent";
+        });
+
+      btn.classList.add("color-selected");
+      btn.style.border="3px solid black";
+
+      selectedCheckoutColor = color.hex;
+
+    };
+
+    grid.appendChild(btn);
+
+  });
+
+}
+
+initializeCheckoutColors();
+
+const originalSetMode = setMode;
+
+setMode = function(newMode){
+
+  originalSetMode(newMode);
+
+  document.getElementById("checkout-colors").style.display =
+    newMode === "checkout"
+      ? "block"
+      : "none";
+
+};
+
+const originalScan = onScanSuccess;
+
+onScanSuccess = function(decodedText){
+
+  if (
+    mode === "checkout" &&
+    !selectedCheckoutColor
+  ) {
+
+    document.getElementById("status").innerText =
+      "❌ Select a checkout color first";
+
+    document.getElementById("status").className =
+      "error";
+
+    return;
+
+  }
+
+  const originalFetch = window.fetch;
+
+  window.fetch = function(url,...args){
+
+    return originalFetch(url,...args)
+      .then(async res=>{
+
+        const clone = res.clone();
+
+        try{
+
+          const data =
+            await clone.json();
+
+          if(
+            mode==="checkout" &&
+            data.status==="success"
+          ){
+
+            let camper =
+              JSON.parse(decodedText);
+
+            originalFetch(
+              `${webAppUrl}?action=checkoutOrder`
+              + `&first=${encodeURIComponent(camper.first)}`
+              + `&last=${encodeURIComponent(camper.last)}`
+              + `&color=${encodeURIComponent(selectedCheckoutColor)}`
+            );
+
+          }
+
+        }catch(e){}
+
+        return res;
+
+      });
+
+  };
+
+  originalScan(decodedText);
+
+};
+
+</script>
